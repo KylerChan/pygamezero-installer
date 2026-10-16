@@ -1,0 +1,75 @@
+name: website
+
+# The site serves install.sh / install.ps1, which pin a release tag and the
+# SHA-256 of install.py. Deploy only from tags so the site never points at a
+# release that doesn't exist yet.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Refuse stale bootstrapper hashes
+        run: python3 tools/release.py --check
+      - name: Assemble site
+        run: |
+          mkdir _site
+          cp website/index.html install.sh install.ps1 _site/
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+  # Run the exact commands from the website against the live site.
+  live-unix:
+    needs: deploy
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: curl | bash from the website
+        run: curl -fsSL https://kylerchan.github.io/pygamezero-installer/install.sh | bash
+
+  live-windows:
+    needs: deploy
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [pwsh, powershell]
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    steps:
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: irm | iex from the website
+        run: |
+          irm https://kylerchan.github.io/pygamezero-installer/install.ps1 | iex
+          if ($LASTEXITCODE -ne 0) { exit 1 }

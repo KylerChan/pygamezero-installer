@@ -1,0 +1,266 @@
+name: test
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  PYTHONUNBUFFERED: "1"
+  SDL_VIDEODRIVER: dummy
+  SDL_AUDIODRIVER: dummy
+
+jobs:
+  unit:
+    name: unit (${{ matrix.os }}, py${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        # 3.9 = oldest supported, 3.13 = recommended, 3.14 = too new for
+        # Pygame but install.py itself must still run on it.
+        python: ["3.9", "3.13", "3.14"]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Bootstrapper hashes are current
+        run: python tools/release.py --check
+      - name: Unit tests
+        run: python -m unittest discover -s tests -v
+
+  integration:
+    name: real install via install.py (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-15-intel, windows-latest]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Fresh + repeated install in a path with spaces and Unicode
+        env:
+          PGZ_INTEGRATION: "1"
+        run: python -m unittest tests.test_installer.RealInstallTests -v
+
+  bootstrap-unix:
+    name: install.sh (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest, macos-15-intel]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Fresh install (default locations)
+        run: bash install.sh
+
+      - name: Repeated install is safe
+        run: |
+          bash install.sh
+          # install.py falls back to zsh on macOS and bash on Linux if SHELL is unset.
+          sh_bin=${SHELL:-$([ "$(uname)" = Darwin ] && echo /bin/zsh || echo /bin/bash)}
+          rc=$(case "$sh_bin" in */zsh) echo ~/.zshrc ;; *) echo ~/.bashrc ;; esac)
+          test "$(grep -c '>>> pygamezero-installer >>>' "$rc")" = 1
+
+      - name: A new shell finds pgzrun and runs a game
+        run: |
+          mkdir -p "$RUNNER_TEMP/my game"
+          cat > "$RUNNER_TEMP/my game/game.py" <<'EOF'
+          import sys
+          WIDTH = 100
+          HEIGHT = 100
+          n = 0
+          def draw():
+              screen.fill((0, 0, 0))
+          def update():
+              global n
+              n += 1
+              if n > 2:
+                  print("GAME_RAN")
+                  sys.exit(0)
+          EOF
+          cd "$RUNNER_TEMP/my game"
+          # Start from a minimal PATH, like a brand new terminal would.
+          sh_bin=${SHELL:-$([ "$(uname)" = Darwin ] && echo /bin/zsh || echo /bin/bash)}
+          out=$(env -i HOME="$HOME" SHELL="$sh_bin" PATH=/usr/bin:/bin \
+                SDL_VIDEODRIVER=dummy SDL_AUDIODRIVER=dummy \
+                "$sh_bin" -ic 'command -v pgzrun && pgzrun game.py' 2>&1)
+          echo "$out"
+          echo "$out" | grep -q GAME_RAN
+
+      - name: Remote mode (curl | bash) with hash verification
+        env:
+          BASE: https://raw.githubusercontent.com/${{ github.event.pull_request.head.repo.full_name || github.repository }}/${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          curl -fsSL "$BASE/install.sh" | PGZ_INSTALLER_BASE_URL="$BASE" bash
+
+      - name: Remote mode refuses a tampered installer
+        env:
+          BASE: https://raw.githubusercontent.com/${{ github.event.pull_request.head.repo.full_name || github.repository }}/${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set +e
+          out=$(curl -fsSL "$BASE/install.sh" | PGZ_INSTALLER_BASE_URL="$BASE" \
+                PGZ_EXPECTED_SHA256=0000000000000000000000000000000000000000000000000000000000000000 bash 2>&1)
+          code=$?
+          echo "$out"
+          [ "$code" = 1 ] || { echo "expected exit 1, got $code"; exit 1; }
+          echo "$out" | grep -q "NOT run" || exit 1
+
+      - name: Network failure gives exit code 6
+        run: |
+          set +e
+          out=$(PGZERO_HOME="$RUNNER_TEMP/offline" PIP_INDEX_URL=https://127.0.0.1:9/simple \
+                PIP_RETRIES=0 PIP_TIMEOUT=5 PIP_NO_CACHE_DIR=1 bash install.sh --no-modify-path 2>&1)
+          code=$?
+          echo "$out"
+          [ "$code" = 6 ] || { echo "expected exit 6, got $code"; exit 1; }
+          echo "$out" | grep -q "Could not download packages" || exit 1
+          if echo "$out" | grep -q "Installation complete"; then exit 1; fi
+
+      - name: Read-only folder gives exit code 7
+        run: |
+          mkdir "$RUNNER_TEMP/locked" && chmod 555 "$RUNNER_TEMP/locked"
+          set +e
+          out=$(PGZERO_HOME="$RUNNER_TEMP/locked/pgz" bash install.sh --no-modify-path 2>&1)
+          code=$?
+          echo "$out"
+          [ "$code" = 7 ] || { echo "expected exit 7, got $code"; exit 1; }
+
+      - name: Uninstall
+        run: |
+          bash install.sh --uninstall
+          test ! -e "$HOME/.local/share/pygamezero"
+          test ! -e "$HOME/.local/bin/pgzrun"
+          if cat ~/.bashrc ~/.bash_profile ~/.zshrc 2>/dev/null | grep -q pygamezero-installer; then exit 1; fi
+
+  bootstrap-linux-distros:
+    name: install.sh in ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Ubuntu 24.04 system Python 3.12
+            image: ubuntu:24.04
+            setup: apt-get update && apt-get install -y python3 python3-venv
+            expect_code: 0
+            expect_text: Installation complete
+          - name: Debian 12 system Python 3.11
+            image: debian:12
+            setup: apt-get update && apt-get install -y python3 python3-venv
+            expect_code: 0
+            expect_text: Installation complete
+          - name: Ubuntu 24.04 without venv support
+            image: ubuntu:24.04
+            setup: apt-get update && apt-get install -y python3
+            expect_code: 3
+            expect_text: python3.12-venv
+          - name: Python 3.14 only (too new for Pygame)
+            image: python:3.14-slim
+            setup: "true"
+            expect_code: 3
+            expect_text: too new
+          - name: No Python at all
+            image: debian:12-slim
+            setup: "true"
+            expect_code: 3
+            expect_text: Python 3 was not found
+    steps:
+      - uses: actions/checkout@v5
+      - name: Prepare image
+        run: ${{ matrix.setup }}
+      - name: Run installer as a normal user
+        shell: bash
+        run: |
+          useradd -m student
+          cp -r . /home/student/installer && chown -R student /home/student/installer
+          set +e
+          out=$(su student -s /bin/bash -c 'cd ~/installer && SHELL=/bin/bash bash install.sh' 2>&1)
+          code=$?
+          echo "$out"
+          [ "$code" = "${{ matrix.expect_code }}" ] || { echo "expected exit ${{ matrix.expect_code }}, got $code"; exit 1; }
+          echo "$out" | grep -q "${{ matrix.expect_text }}" || exit 1
+
+  bootstrap-windows:
+    name: install.ps1 (${{ matrix.shell }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shell: [pwsh, powershell]   # PowerShell 7 and Windows PowerShell 5.1
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Fresh install
+        run: |
+          & ${{ matrix.shell }} -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Repeated install is safe
+        run: |
+          & ${{ matrix.shell }} -NoProfile -ExecutionPolicy Bypass -File .\install.ps1
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $user = [Environment]::GetEnvironmentVariable("Path", "User")
+          $hits = @($user -split ";" | Where-Object { $_ -like "*pygamezero\bin" }).Count
+          if ($hits -ne 1) { Write-Host "PATH entries: $hits"; exit 1 }
+
+      - name: A new terminal finds pgzrun and runs a game
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP "my game"
+          New-Item -ItemType Directory -Path $dir -Force | Out-Null
+          Set-Content -Path (Join-Path $dir "game.py") -Encoding ascii -Value @(
+            "import sys", "WIDTH = 100", "HEIGHT = 100", "n = 0",
+            "def draw():", "    screen.fill((0, 0, 0))",
+            "def update():", "    global n", "    n += 1",
+            "    if n > 2:", "        print('GAME_RAN')", "        sys.exit(0)")
+          # What a newly opened terminal sees: PATH rebuilt from the registry.
+          $env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")
+          Set-Location $dir
+          (Get-Command pgzrun).Source
+          $out = & pgzrun game.py 2>&1 | Out-String
+          Write-Host $out
+          if ($out -notmatch "GAME_RAN") { exit 1 }
+
+      - name: Remote mode (irm | iex) with hash verification
+        env:
+          PGZ_INSTALLER_BASE_URL: https://raw.githubusercontent.com/${{ github.event.pull_request.head.repo.full_name || github.repository }}/${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          irm "$env:PGZ_INSTALLER_BASE_URL/install.ps1" | iex
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Remote mode refuses a tampered installer
+        env:
+          PGZ_INSTALLER_BASE_URL: https://raw.githubusercontent.com/${{ github.event.pull_request.head.repo.full_name || github.repository }}/${{ github.event.pull_request.head.sha || github.sha }}
+          PGZ_EXPECTED_SHA256: "0000000000000000000000000000000000000000000000000000000000000000"
+        run: |
+          irm "$env:PGZ_INSTALLER_BASE_URL/install.ps1" | iex
+          if ($LASTEXITCODE -ne 1) { exit 1 }
+          exit 0
+
+      - name: Uninstall
+        run: |
+          & ${{ matrix.shell }} -NoProfile -ExecutionPolicy Bypass -File .\install.ps1 -Uninstall
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          if (Test-Path "$env:LOCALAPPDATA\pygamezero") { exit 1 }
+          $user = [Environment]::GetEnvironmentVariable("Path", "User")
+          if ($user -like "*pygamezero*") { exit 1 }

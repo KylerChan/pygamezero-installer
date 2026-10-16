@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pygame Zero Installer</title>
+<meta name="description" content="Install Pygame and Pygame Zero on Windows, macOS or Linux with one command.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%23ffb000'/><circle cx='12' cy='16' r='5' fill='%23101418'/><rect x='19' y='10' width='4' height='12' rx='2' fill='%23101418'/></svg>">
+<style>
+:root {
+  --bg: #fbfaf7;
+  --surface: #ffffff;
+  --text: #171a1f;
+  --muted: #5b6370;
+  --line: #e4e1da;
+  --accent: #c27a00;
+  --accent-soft: #fff3d6;
+  --code-bg: #14171c;
+  --code-text: #f2f2ee;
+  --prompt: #ffb000;
+  --ok: #1d7f45;
+  --radius: 14px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1215; --surface: #171b20; --text: #eceae4; --muted: #9aa3ae;
+    --line: #2a3038; --accent: #ffb000; --accent-soft: #2b2311;
+    --code-bg: #0a0c0f; --code-text: #f2f2ee; --ok: #4cc47f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1215; --surface: #171b20; --text: #eceae4; --muted: #9aa3ae;
+  --line: #2a3038; --accent: #ffb000; --accent-soft: #2b2311;
+  --code-bg: #0a0c0f; --code-text: #f2f2ee; --ok: #4cc47f;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.wrap { max-width: 760px; margin: 0 auto; padding: 0 16px; }
+a { color: var(--accent); }
+code, pre, kbd { font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace; }
+:not(pre) > code { background: var(--accent-soft); padding: 0.1em 0.35em; border-radius: 5px; font-size: 0.92em; }
+kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 0.35em; font-size: 0.88em; background: var(--surface); }
+
+header { padding: 56px 0 24px; }
+.badge { display: inline-block; font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); }
+h1 { font-size: clamp(2rem, 6vw, 3rem); line-height: 1.1; margin: 8px 0 12px; letter-spacing: -0.02em; }
+.lead { font-size: 1.15rem; color: var(--muted); margin: 0; max-width: 34em; }
+
+section { padding: 28px 0; border-top: 1px solid var(--line); }
+section:first-of-type { border-top: 0; }
+h2 { font-size: 1.4rem; margin: 0 0 12px; letter-spacing: -0.01em; }
+h3 { font-size: 1.05rem; margin: 20px 0 6px; }
+p { margin: 0 0 12px; }
+
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 4px 0 14px; }
+.tab {
+  font: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+  padding: 8px 16px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--text);
+}
+.tab[aria-selected="true"] { background: var(--text); color: var(--bg); border-color: var(--text); }
+.tab:focus-visible, .copy:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.panel { display: none; }
+.panel.active { display: block; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
+
+ol.steps { margin: 0; padding: 0; list-style: none; counter-reset: s; }
+ol.steps > li { counter-increment: s; position: relative; padding-left: 40px; margin-bottom: 18px; }
+ol.steps > li:last-child { margin-bottom: 0; }
+ol.steps > li::before {
+  content: counter(s); position: absolute; left: 0; top: 0;
+  width: 28px; height: 28px; border-radius: 50%; background: var(--accent-soft); color: var(--accent);
+  font-weight: 700; font-size: 14px; display: grid; place-items: center;
+}
+
+.cmd { position: relative; margin: 8px 0 4px; }
+.cmd pre {
+  margin: 0; background: var(--code-bg); color: var(--code-text); border-radius: 10px;
+  padding: 14px 92px 14px 16px; overflow-x: auto; font-size: 14.5px; line-height: 1.5; white-space: pre;
+}
+.cmd pre .p { color: var(--prompt); user-select: none; }
+.copy {
+  position: absolute; top: 8px; right: 8px; font: inherit; font-size: 13px; font-weight: 600;
+  padding: 6px 12px; border-radius: 7px; border: 0; cursor: pointer;
+  background: #2b3038; color: #f2f2ee;
+}
+.copy.done { background: var(--ok); color: #fff; }
+
+pre.block {
+  margin: 8px 0 12px; background: var(--code-bg); color: var(--code-text); border-radius: 10px;
+  padding: 14px 16px; overflow-x: auto; font-size: 14px; line-height: 1.5;
+}
+pre.block .c { color: #8b949e; }
+pre.block .ok { color: #4cc47f; }
+
+.note { font-size: 15px; color: var(--muted); }
+.callout { background: var(--accent-soft); border-radius: 10px; padding: 12px 14px; font-size: 15.5px; margin: 14px 0 0; }
+
+details { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); margin-bottom: 8px; }
+summary { cursor: pointer; padding: 12px 14px; font-weight: 600; }
+details > div { padding: 0 14px 12px; }
+
+footer { padding: 32px 0 48px; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); }
+.theme { float: right; font: inherit; font-size: 13px; background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 7px; padding: 4px 10px; cursor: pointer; }
+
+@media (max-width: 520px) {
+  body { font-size: 16px; }
+  header { padding-top: 36px; }
+  .card { padding: 16px; }
+  ol.steps > li { padding-left: 36px; }
+  .cmd pre { font-size: 13px; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <span class="badge">Game Development CCA</span>
+    <h1>Install Pygame Zero<br>with one command</h1>
+    <p class="lead">Sets up Pygame and Pygame Zero on Windows, macOS or Linux so you can run games with <code>pgzrun game.py</code>.</p>
+  </header>
+
+  <main>
+    <section id="install" aria-labelledby="install-h">
+      <h2 id="install-h">Install</h2>
+      <p id="mobile-note" class="callout" hidden>You're on a phone or tablet. Open this page on the computer you'll make games on.</p>
+      <div class="tabs" role="tablist" aria-label="Choose your computer">
+        <button class="tab" role="tab" id="tab-windows" aria-controls="p-windows" aria-selected="false">Windows</button>
+        <button class="tab" role="tab" id="tab-mac" aria-controls="p-mac" aria-selected="false">macOS</button>
+        <button class="tab" role="tab" id="tab-linux" aria-controls="p-linux" aria-selected="false">Linux</button>
+      </div>
+
+      <div class="panel card" role="tabpanel" id="p-windows" aria-labelledby="tab-windows">
+        <ol class="steps">
+          <li>Press <kbd>Start</kbd>, type <strong>PowerShell</strong> and open <strong>Windows PowerShell</strong>. Not "Command Prompt".</li>
+          <li>Copy this command, paste it into PowerShell (right-click pastes) and press <kbd>Enter</kbd>:
+            <div class="cmd"><pre><span class="p">&gt; </span><span data-cmd>irm https://kylerchan.github.io/pygamezero-installer/install.ps1 | iex</span></pre><button class="copy" type="button">Copy</button></div>
+          </li>
+          <li>Wait for <strong>Installation complete!</strong>, then <strong>close PowerShell and open a new one</strong>.</li>
+        </ol>
+      </div>
+
+      <div class="panel card" role="tabpanel" id="p-mac" aria-labelledby="tab-mac">
+        <ol class="steps">
+          <li>Press <kbd>⌘</kbd> + <kbd>Space</kbd>, type <strong>Terminal</strong> and press <kbd>Enter</kbd>.</li>
+          <li>Copy this command, paste it into Terminal (<kbd>⌘</kbd> + <kbd>V</kbd>) and press <kbd>Enter</kbd>:
+            <div class="cmd"><pre><span class="p">$ </span><span data-cmd>curl -fsSL https://kylerchan.github.io/pygamezero-installer/install.sh | bash</span></pre><button class="copy" type="button">Copy</button></div>
+          </li>
+          <li>Wait for <strong>Installation complete!</strong>, then <strong>close Terminal and open a new window</strong>.</li>
+        </ol>
+      </div>
+
+      <div class="panel card" role="tabpanel" id="p-linux" aria-labelledby="tab-linux">
+        <ol class="steps">
+          <li>Open a terminal (on Ubuntu: <kbd>Ctrl</kbd> + <kbd>Alt</kbd> + <kbd>T</kbd>).</li>
+          <li>Copy this command, paste it (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>V</kbd>) and press <kbd>Enter</kbd>:
+            <div class="cmd"><pre><span class="p">$ </span><span data-cmd>curl -fsSL https://kylerchan.github.io/pygamezero-installer/install.sh | bash</span></pre><button class="copy" type="button">Copy</button></div>
+          </li>
+          <li>Wait for <strong>Installation complete!</strong>, then <strong>close the terminal and open a new one</strong>.</li>
+        </ol>
+      </div>
+
+      <p class="callout"><strong>Need Python?</strong> The installer finds a suitable Python (3.9–3.13) on its own. If you don't have one, it tells you exactly what to do, and on Windows and macOS it can install Python for you after asking. It never needs administrator rights or your password.</p>
+    </section>
+
+    <section id="output" aria-labelledby="output-h">
+      <h2 id="output-h">What you'll see</h2>
+<pre class="block">Pygame Zero Installer (v1.0.0)
+
+[1/7] Detecting operating system... <span class="ok">macOS 15 (Apple Silicon), arm64</span>
+[2/7] Checking Python... <span class="ok">Python 3.13.5</span>
+[3/7] Preparing environment... <span class="ok">OK</span>
+[4/7] Installing Pygame... <span class="ok">OK (pygame 2.6.1)</span>
+[5/7] Installing Pygame Zero... <span class="ok">OK (pgzero 1.2.1)</span>
+[6/7] Adding the pgzrun command... <span class="ok">OK</span>
+[7/7] Verifying installation... <span class="ok">OK</span>
+
+Installation complete!</pre>
+      <p class="note">It takes about a minute, depending on your internet. Running it again is safe: it fixes anything missing and leaves everything else alone.</p>
+    </section>
+
+    <section id="first-game" aria-labelledby="game-h">
+      <h2 id="game-h">Make your first game</h2>
+      <p>Make a folder called <code>my-game</code>. Inside it, create a file called <code>game.py</code> with this code:</p>
+      <div class="cmd"><pre data-cmd>WIDTH = 500
+HEIGHT = 400
+
+x = 0
+
+def draw():
+    screen.fill((30, 30, 60))
+    screen.draw.filled_circle((x, 200), 30, "orange")
+    screen.draw.text("Hello, Pygame Zero!", (20, 20), fontsize=40)
+
+def update():
+    global x
+    x = (x + 3) % WIDTH</pre><button class="copy" type="button">Copy</button></div>
+      <p>Then, in a new terminal, go into the folder and run it:</p>
+<pre class="block">cd my-game
+pgzrun game.py</pre>
+      <p>A window opens with a moving orange ball. Put pictures in an <code>images</code> folder and sounds in a <code>sounds</code> folder next to <code>game.py</code>. Next, try the <a href="https://pygame-zero.readthedocs.io/en/stable/introduction.html">official Pygame Zero tutorial</a>.</p>
+    </section>
+
+    <section id="help" aria-labelledby="help-h">
+      <h2 id="help-h">Help</h2>
+      <details>
+        <summary>"pgzrun" is not recognized / command not found</summary>
+        <div><p>Close the terminal and open a <strong>new</strong> one: old windows don't see the new command. Still stuck? Run the install command again and read the last lines it prints.</p></div>
+      </details>
+      <details>
+        <summary>"No compatible Python found" or "Python 3.14 is too new"</summary>
+        <div><p>Pygame doesn't support Python 3.14 yet. Install Python 3.13 with the command the installer shows (you can keep your other Python), open a new terminal and run the installer again.</p>
+        <p>Windows: <code>winget install --id Python.Python.3.13 -e --scope user</code><br>macOS: <code>brew install python@3.13</code>, or download it from <a href="https://www.python.org/downloads/">python.org</a>.</p></div>
+      </details>
+      <details>
+        <summary>"Could not download packages"</summary>
+        <div><p>You're offline, or the network blocks <code>pypi.org</code>. Try another network (for example at home), or ask IT to allow <code>pypi.org</code> and <code>files.pythonhosted.org</code>.</p></div>
+      </details>
+      <details>
+        <summary>"Virtual environment support is missing" (Ubuntu / Debian)</summary>
+        <div><p>Run the <code>sudo apt install python3.X-venv</code> command the installer prints, then run the installer again.</p></div>
+      </details>
+      <details>
+        <summary>"Permission denied"</summary>
+        <div><p>Close any running games and code editors and try again. Don't use <code>sudo</code> or "Run as administrator".</p></div>
+      </details>
+      <details>
+        <summary>Using VS Code, Thonny or Mu</summary>
+        <div><p>At the end, the installer prints <strong>"Python for your editor"</strong> followed by a path. Choose that Python as the interpreter in your editor.</p></div>
+      </details>
+      <details>
+        <summary>Uninstall</summary>
+        <div>
+          <p>macOS / Linux:</p>
+          <div class="cmd"><pre><span data-cmd>curl -fsSL https://kylerchan.github.io/pygamezero-installer/install.sh | bash -s -- --uninstall</span></pre><button class="copy" type="button">Copy</button></div>
+          <p>Windows (PowerShell):</p>
+          <div class="cmd"><pre><span data-cmd>&amp; ([scriptblock]::Create((irm https://kylerchan.github.io/pygamezero-installer/install.ps1))) -Uninstall</span></pre><button class="copy" type="button">Copy</button></div>
+          <p class="note">This removes only what the installer added. Your games and other Python installations stay.</p>
+        </div>
+      </details>
+    </section>
+
+    <section id="security" aria-labelledby="sec-h">
+      <h2 id="sec-h">Is this safe?</h2>
+      <p>The command downloads a small script and runs it. Before running anything else, the script checks that the main installer file matches a fixed SHA-256 fingerprint from a tagged release. It installs only into your own user folders, never asks for a password, and never changes your other Python installations.</p>
+      <p>Prefer to read the code first? Everything is on <a href="https://github.com/KylerChan/pygamezero-installer">GitHub</a>, including <a href="https://github.com/KylerChan/pygamezero-installer#install-without-curl--bash-inspect-first">how to download and inspect it before running</a>.</p>
+    </section>
+  </main>
+
+  <footer>
+    <button class="theme" type="button" id="theme">Theme</button>
+    Pygame Zero Installer · <a href="https://github.com/KylerChan/pygamezero-installer">Source on GitHub</a> · MIT License<br>
+    Not affiliated with the Pygame or Pygame Zero projects.
+  </footer>
+</div>
+
+<script>
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+
+  function select(name, focus) {
+    tabs.forEach(function (t) {
+      var on = t.id === "tab-" + name;
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute("aria-controls")).classList.toggle("active", on);
+      if (on && focus) t.focus();
+    });
+  }
+
+  function detect() {
+    var ua = navigator.userAgent || "";
+    var plat = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
+    if (/Android|iPhone|iPad|iPod/i.test(ua)) document.getElementById("mobile-note").hidden = false;
+    if (/Win/i.test(plat) || /Windows/i.test(ua)) return "windows";
+    if (/Mac/i.test(plat) || /Mac OS X/i.test(ua)) return "mac";
+    if (/Linux|X11|CrOS/i.test(plat + ua)) return "linux";
+    return "windows";
+  }
+
+  tabs.forEach(function (t, i) {
+    t.addEventListener("click", function () { select(t.id.slice(4), false); });
+    t.addEventListener("keydown", function (e) {
+      var d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+      if (d) { e.preventDefault(); select(tabs[(i + d + tabs.length) % tabs.length].id.slice(4), true); }
+    });
+  });
+  select(detect(), false);
+
+  document.querySelectorAll(".copy").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var src = btn.parentNode.querySelector("[data-cmd]");
+      var text = src.textContent;
+      function done() {
+        btn.textContent = "Copied!"; btn.classList.add("done");
+        setTimeout(function () { btn.textContent = "Copy"; btn.classList.remove("done"); }, 1800);
+      }
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+      } else { fallback(); }
+      function fallback() {
+        var range = document.createRange(); range.selectNodeContents(src);
+        var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+        try { if (document.execCommand("copy")) done(); } catch (e) {}
+      }
+    });
+  });
+
+  var root = document.documentElement;
+  try { var saved = localStorage.getItem("theme"); if (saved) root.setAttribute("data-theme", saved); } catch (e) {}
+  document.getElementById("theme").addEventListener("click", function () {
+    var dark = root.getAttribute("data-theme") === "dark" ||
+      (!root.getAttribute("data-theme") && matchMedia("(prefers-color-scheme: dark)").matches);
+    var next = dark ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    try { localStorage.setItem("theme", next); } catch (e) {}
+  });
+})();
+</script>
+</body>
+</html>
