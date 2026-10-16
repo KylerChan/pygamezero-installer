@@ -29,8 +29,8 @@ fi
 
 # The values below are written by tools/release.py. Do not edit by hand.
 PGZ_REPO="KylerChan/pygamezero-installer"
-PGZ_VERSION="v1.0.0"
-PGZ_INSTALL_PY_SHA256="f33d1bf6ec79d2587068f6b07477fca12ea9f00b4ea397ab867494434cb67d19"
+PGZ_VERSION="v1.1.0"
+PGZ_INSTALL_PY_SHA256="a67792a8abaf4948e13c6742b8689546e647817b71d77c47ecf2ba117f9ad4b6"
 
 # Everything is inside main(), so a partially downloaded script does nothing.
 # Must run on macOS's bash 3.2: no bash 4 features.

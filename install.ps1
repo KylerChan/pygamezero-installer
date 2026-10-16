@@ -1,6 +1,6 @@
 # Pygame Zero Installer: Windows PowerShell bootstrapper.
 #
-#   irm https://raw.githubusercontent.com/KylerChan/pygamezero-installer/v1.0.0/install.ps1 | iex
+#   irm https://raw.githubusercontent.com/KylerChan/pygamezero-installer/v1.1.0/install.ps1 | iex
 #
 # This script only finds a Python 3 to run install.py with. It downloads
 # install.py from a fixed release, checks its SHA-256 hash, and runs it.
@@ -31,8 +31,8 @@ param(
 
 # The values below are written by tools/release.py. Do not edit by hand.
 $PgzRepo = "KylerChan/pygamezero-installer"
-$PgzVersion = "v1.0.0"
-$PgzInstallPySha256 = "f33d1bf6ec79d2587068f6b07477fca12ea9f00b4ea397ab867494434cb67d19"
+$PgzVersion = "v1.1.0"
+$PgzInstallPySha256 = "a67792a8abaf4948e13c6742b8689546e647817b71d77c47ecf2ba117f9ad4b6"
 
 # ---------------------------------------------------------------------------
 # Preflight (PowerShell 2.0 and Constrained Language Mode safe)

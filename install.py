@@ -33,7 +33,7 @@ import tempfile
 import time
 import traceback
 
-INSTALLER_VERSION = "1.0.0"
+INSTALLER_VERSION = "1.1.0"
 
 # Pinned, tested package versions. pygame 2.6.1 publishes binary wheels for
 # CPython 3.6-3.13 only; on 3.14+ pip falls back to compiling pygame from
