@@ -37,9 +37,14 @@ class TempDirTestCase(unittest.TestCase):
         return inst.Layout(os_info, env=base)
 
 
-def run_main(argv, env):
+def run_main(argv, env, log_dir=None):
+    """Run main() with a patched environment. Logs that cannot go into the
+    install folder land in `log_dir` (never the real temp folder)."""
     out = io.StringIO()
-    with mock.patch.dict(os.environ, env), contextlib.redirect_stdout(out):
+    log_dir = log_dir or env.get("PGZERO_HOME") or tempfile.gettempdir()
+    fallback = log_dir if os.path.isdir(log_dir) else os.path.dirname(log_dir)
+    with mock.patch.dict(os.environ, env), contextlib.redirect_stdout(out), \
+            mock.patch.object(inst, "fallback_log_dir", return_value=fallback):
         code = inst.main(argv)
     return code, out.getvalue()
 
@@ -100,18 +105,25 @@ class PipInstallTests(TempDirTestCase):
         out = ("ERROR: Could not find a version that satisfies the requirement pygame==2.6.1 "
                "(from versions: none)\nERROR: No matching distribution found for pygame==2.6.1")
         with mock.patch.object(inst, "run", return_value=(1, out)):
-            with mock.patch.object(inst, "index_reachable", return_value=False):
+            with mock.patch.object(inst, "index_problem", return_value="offline"):
                 with self.assertRaises(inst.InstallError) as ctx:
                     inst.pip_install(layout, inst.PYGAME_SPEC)
             self.assertEqual(ctx.exception.code, inst.EXIT_NETWORK)
-            with mock.patch.object(inst, "index_reachable", return_value=True):
+            with mock.patch.object(inst, "index_problem", return_value=None):
                 with self.assertRaises(inst.InstallError) as ctx:
                     inst.pip_install(layout, inst.PYGAME_SPEC)
             self.assertEqual(ctx.exception.code, inst.EXIT_PACKAGE)
 
-    def test_index_reachable_false_for_dead_index(self):
+    def test_index_problem_for_dead_index(self):
         with mock.patch.dict(os.environ, {"PIP_INDEX_URL": "https://127.0.0.1:9/simple"}):
-            self.assertFalse(inst.index_reachable(timeout=3))
+            for var in ("HTTPS_PROXY", "https_proxy", "ALL_PROXY", "all_proxy"):
+                os.environ.pop(var, None)
+            self.assertEqual(inst.index_problem(timeout=3), "offline")
+        with mock.patch.dict(os.environ, {"PIP_INDEX_URL": "https://pypi.org/simple",
+                                          "HTTPS_PROXY": "http://127.0.0.1:9"}):
+            os.environ.pop("NO_PROXY", None)
+            os.environ.pop("no_proxy", None)
+            self.assertEqual(inst.index_problem(timeout=3), "proxy")
 
     def test_clean_env_drops_variables_that_break_venvs(self):
         with mock.patch.dict(os.environ, {"PIP_USER": "1", "PYTHONPATH": "/x",
@@ -290,8 +302,8 @@ class ShellRcTests(TempDirTestCase):
         layout = self.layout()
         env = {"HOME": self.tmp, "SHELL": "/bin/zsh"}
         changed = inst.ensure_unix_path(layout, env=env, system="Darwin")
-        self.assertEqual(changed, [os.path.join(self.tmp, ".zshrc")])
-        self.assertEqual(inst.ensure_unix_path(layout, env=env, system="Darwin"), [])
+        self.assertEqual(changed, ([os.path.join(self.tmp, ".zshrc")], []))
+        self.assertEqual(inst.ensure_unix_path(layout, env=env, system="Darwin"), ([], []))
 
     def test_path_contains(self):
         sep = os.pathsep
@@ -423,7 +435,8 @@ class MainFlowTests(TempDirTestCase):
                                              return_value=(venv, "created")),
             "pip_install": mock.patch.object(inst, "pip_install", return_value=""),
             "install_shim": mock.patch.object(inst, "install_shim", return_value=("ok", "x")),
-            "ensure_unix_path": mock.patch.object(inst, "ensure_unix_path", return_value=[]),
+            "ensure_unix_path": mock.patch.object(inst, "ensure_unix_path",
+                                                  return_value=([], [])),
             "verify": mock.patch.object(inst, "verify"),
             "installed_versions": mock.patch.object(
                 inst, "installed_versions", return_value={"pygame": "2.6.1", "pgzero": "1.2.1"}),

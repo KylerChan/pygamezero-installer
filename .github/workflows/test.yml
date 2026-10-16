@@ -119,6 +119,18 @@ jobs:
           [ "$code" = 1 ] || { echo "expected exit 1, got $code"; exit 1; }
           echo "$out" | grep -q "NOT run" || exit 1
 
+      - name: Piping to sh explains that bash is needed
+        if: runner.os == 'Linux'   # macOS /bin/sh is bash, so it would just install
+        env:
+          BASE: https://raw.githubusercontent.com/${{ github.event.pull_request.head.repo.full_name || github.repository }}/${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set +e
+          out=$(curl -fsSL "$BASE/install.sh" | sh 2>&1)
+          code=$?
+          echo "$out"
+          [ "$code" = 1 ] || { echo "expected exit 1, got $code"; exit 1; }
+          echo "$out" | grep -q "needs bash" || exit 1
+
       - name: Network failure gives exit code 6
         run: |
           set +e
@@ -262,6 +274,25 @@ jobs:
         run: |
           irm "$env:PGZ_INSTALLER_BASE_URL/install.ps1" | iex
           if ($LASTEXITCODE -ne 1) { exit 1 }
+          exit 0
+
+      - name: Bootstrapper error-handling tests (this PowerShell)
+        run: |
+          $env:PGZ_PWSH = (Get-Command ${{ matrix.shell }}).Source
+          python -m unittest tests.test_bootstrap_ps1 -v
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Constrained Language Mode is detected without closing the session
+        run: |
+          $out = & ${{ matrix.shell }} -NoProfile -Command "`$ExecutionContext.SessionState.LanguageMode='ConstrainedLanguage'; Get-Content -Raw .\install.ps1 | iex; Write-Host after=`$LASTEXITCODE" | Out-String
+          Write-Host $out
+          if ($out -notmatch 'after=7') { exit 1 }
+
+      - name: Download failure keeps the iex session open
+        run: |
+          $env:PGZ_INSTALLER_BASE_URL = "https://nonexistent.invalid"
+          Get-Content -Raw .\install.ps1 | iex
+          if ($LASTEXITCODE -ne 6) { Write-Host "got $LASTEXITCODE"; exit 1 }
           exit 0
 
       - name: Uninstall

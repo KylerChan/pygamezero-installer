@@ -176,6 +176,7 @@ Add these after `install.py`, or after `bash -s --` when using curl (for example
 | `--no-modify-path` | `-NoModifyPath` | Don't change PATH; print instructions instead |
 | `--yes` | `-Yes` | Accept the offer to install Python with winget/Homebrew |
 | `--python PATH` | | Use a specific Python |
+| `--allow-root` | | Allow installing as root (containers only; students never need this) |
 
 To pass options with `irm` on Windows, use: `& ([scriptblock]::Create((irm https://raw.githubusercontent.com/KylerChan/pygamezero-installer/v1.0.0/install.ps1))) -Uninstall`
 
@@ -193,9 +194,20 @@ Environment variables `PGZERO_HOME` (where the environment goes) and `PGZERO_BIN
 | "Permission denied" | Close any running games and editors, then try again. **Don't** use `sudo` or "Run as administrator". |
 | Windows: "running scripts is disabled on this system" | Use the `irm ... \| iex` command, or run a downloaded script with `powershell -ExecutionPolicy Bypass -File .\install.ps1`. |
 | macOS: a pop-up asks to install "command line developer tools" | That's macOS offering its own Python. You can cancel it and install Python 3.13 from python.org instead. |
+| "This installer needs bash" | You typed `\| sh` at the end. Use `\| bash` instead. |
+| "A web page was downloaded instead of the installer" / "the download was empty" | Your Wi-Fi wants you to log in. Open any web page in your browser, sign in, then run the command again. |
+| Certificate / HTTPS errors on a school network | The network inspects secure traffic. Check your computer's clock, try a phone hotspot, or ask IT to allow `raw.githubusercontent.com`, `pypi.org` and `files.pythonhosted.org`. |
+| "PowerShell is running in ConstrainedLanguage mode" (Windows) | Your school limits scripts on this PC. Ask IT, or install Python 3.13 from python.org, download `install.py` and run `py install.py`. |
+| "Running as root" / you used `sudo` | Never use `sudo`: the installer is for your own account. If you used it before, run `sudo chown -R "$(whoami)" ~/.local/share/pygamezero ~/.local/bin/pgzrun` and run the installer again normally. (Installing as root on purpose, e.g. in a container: add `--allow-root`.) |
+| The install was interrupted (Ctrl+C, closed window, lost Wi-Fi) | Just run it again. It notices the half-finished install and repairs it automatically. |
+| "Not enough free disk space" | The installer needs about 500 MB. Empty the Trash / Recycle Bin or delete large files. |
+| "Another program is using files" (Windows) | Close running games and editors (VS Code, Thonny, Mu), then run it again. Restart if it keeps happening. |
+| "Path too long" (Windows) | In PowerShell run `$env:PGZERO_HOME = "C:\pgzero"`, then run the install command again in the same window. |
 | The game window doesn't open on Linux | You need a desktop session; it won't open over plain SSH. |
 
-**Exit codes** (useful for teachers and scripts): `0` success, `1` unexpected error, `2` unsupported system, `3` no compatible Python, `4` environment problem, `5` package install failed, `6` network problem, `7` permission problem, `8` verification failed.
+**Getting help.** When something fails, the installer prints the path of a log file: `install.log` in the Pygame Zero folder, or a `pygamezero-install-….log` in your temp folder if that folder couldn't be created. Send that file to your teacher or attach it to a [GitHub issue](https://github.com/KylerChan/pygamezero-installer/issues). It contains the steps and error messages, not passwords (proxy and pip settings are recorded by name only).
+
+**Exit codes** (useful for teachers and scripts): `0` success, `1` unexpected error, `2` unsupported system (or PowerShell too old), `3` no compatible Python, `4` environment problem (including a full disk), `5` package install failed, `6` network problem, `7` permission problem (including running as root, or scripts blocked by school policy), `8` verification failed, `130` cancelled with Ctrl+C.
 
 ## Uninstall
 
