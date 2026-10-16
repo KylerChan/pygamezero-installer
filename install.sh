@@ -14,7 +14,7 @@
 # The values below are written by tools/release.py. Do not edit by hand.
 PGZ_REPO="KylerChan/pygamezero-installer"
 PGZ_VERSION="v1.0.0"
-PGZ_INSTALL_PY_SHA256="d15b2c0ce6fd5a2faf068b65bd7b78dc3c36c8b18962ed0915c37b7c08237911"
+PGZ_INSTALL_PY_SHA256="c2ac724fa82e1cab3f687f3477947aac18ad8be2dcc15dc1d3ae3c013b186337"
 
 # Everything is inside main(), so a partially downloaded script does nothing.
 main() {

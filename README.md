@@ -188,6 +188,7 @@ Environment variables `PGZERO_HOME` (where the environment goes) and `PGZERO_BIN
 | `pgzrun: command not found` / `pgzrun is not recognized` | Close the terminal and open a **new** one. Still not working? Use the full path from the table under "Where things go", or run the installer again and read the last lines it prints. |
 | "No compatible Python found" / "Python 3.14 is too new" | Install Python 3.13 using the command the installer shows (for example `winget install --id Python.Python.3.13 -e --scope user`, or `brew install python@3.13`), open a new terminal, and run the installer again. You can keep your other Python. |
 | "Virtual environment support is missing" (Ubuntu/Debian) | Run the `sudo apt install python3.X-venv` command the installer shows, then run the installer again. |
+| "Pygame needs the system library ..." (Linux) | Minimal Linux installs can lack a library Pygame uses (usually GLib). Run the `sudo apt install ...` (or `dnf`/`pacman`) command the installer prints, then run it again. |
 | "Could not download packages" | You're offline, or a school proxy/firewall blocks `pypi.org`. Try another network or ask IT to allow `pypi.org` and `files.pythonhosted.org`. |
 | "Permission denied" | Close any running games and editors, then try again. **Don't** use `sudo` or "Run as administrator". |
 | Windows: "running scripts is disabled on this system" | Use the `irm ... \| iex` command, or run a downloaded script with `powershell -ExecutionPolicy Bypass -File .\install.ps1`. |

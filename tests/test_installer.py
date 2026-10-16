@@ -171,7 +171,7 @@ class HomeFolderSafetyTests(TempDirTestCase):
 class LayoutTests(unittest.TestCase):
     def test_defaults(self):
         lin = inst.Layout(LINUX, env={"XDG_DATA_HOME": "/data"})
-        self.assertEqual(lin.home, os.path.abspath("/data/pygamezero"))
+        self.assertEqual(lin.home, os.path.join("/data", "pygamezero"))
         self.assertTrue(lin.venv_python.endswith(os.path.join("venv", "bin", "python")))
         self.assertEqual(os.path.basename(lin.bin_dir), "bin")
         win = inst.Layout(WINDOWS, env={"LOCALAPPDATA": "C:\\Users\\a\\AppData\\Local"})
@@ -350,6 +350,25 @@ class WindowsPathTests(unittest.TestCase):
         reg = FakeWinreg(5, FakeWinreg.REG_DWORD)
         with self.assertRaises(inst.InstallError):
             inst.ensure_windows_path("C:\\pgz\\bin", reg)
+
+
+class MissingLibraryTests(unittest.TestCase):
+    OUT = ("NotImplementedError: mixer module not available (ImportError: "
+           "libgthread-2.0.so.0: cannot open shared object file: No such file or directory)")
+
+    def test_debian_gets_exact_package(self):
+        text = inst.missing_library_help(self.OUT, LINUX)
+        self.assertIn("libgthread-2.0.so.0", text)
+        self.assertIn("sudo apt install libglib2.0-0", text)
+
+    def test_unknown_library_and_distro(self):
+        text = inst.missing_library_help("libfoo.so.3: cannot open shared object file",
+                                         dict(LINUX, distro_id="gentoo", distro_like=""))
+        self.assertIn("libfoo.so.3", text)
+        self.assertNotIn("sudo", text)
+
+    def test_other_errors_are_not_library_errors(self):
+        self.assertIsNone(inst.missing_library_help("ModuleNotFoundError: pgzero", LINUX))
 
 
 class OfferPythonInstallTests(unittest.TestCase):

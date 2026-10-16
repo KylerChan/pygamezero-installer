@@ -372,7 +372,8 @@ def candidate_commands(os_info, env=None):
                 cands.append("/opt/homebrew/bin/python3.%d" % minor)
                 cands.append("/usr/local/bin/python3.%d" % minor)
             if not _mac_has_command_line_tools():
-                cands = [c for c in cands if os.path.realpath(c) != "/usr/bin/python3"]
+                stub = "/usr/bin/python3"
+                cands = [c for c in cands if c != stub and os.path.realpath(c) != stub]
     cands.append(sys.executable)
 
     seen, unique = set(), []
@@ -1075,6 +1076,37 @@ def _broadcast_environment_change():
 # Step 7: verification
 # --------------------------------------------------------------------------
 
+# System libraries Pygame's Linux wheels expect the OS to provide, mapped to
+# the package that contains them. Desktop installs have these; minimal
+# server/container images may not.
+LINUX_LIBRARY_PACKAGES = {
+    "libgthread-2.0": {"debian": "libglib2.0-0", "fedora": "glib2", "arch": "glib2",
+                       "suse": "libgthread-2_0-0"},
+    "libglib-2.0": {"debian": "libglib2.0-0", "fedora": "glib2", "arch": "glib2",
+                    "suse": "libglib-2_0-0"},
+}
+
+
+def missing_library_help(output, os_info=None):
+    """Explain a missing shared library (Linux), or return None."""
+    m = re.search(r"([\w.+-]+\.so(?:\.\d+)*): cannot open shared object file", output or "")
+    if not m:
+        return None
+    lib = m.group(1)
+    os_info = os_info or detect_os()
+    family = _linux_family(os_info)
+    package = LINUX_LIBRARY_PACKAGES.get(lib.split(".so")[0], {}).get(family)
+    command = {"debian": "sudo apt install %s", "fedora": "sudo dnf install %s",
+               "arch": "sudo pacman -S %s", "suse": "sudo zypper install %s"}.get(family)
+    lines = ["Pygame needs the system library %s, which is not installed." % lib]
+    if package and command:
+        lines += ["Install it with:", "    " + command % package]
+    else:
+        lines.append("Install the package that provides %s with your package manager." % lib)
+    lines.append("Then run this installer again.")
+    return "\n".join(lines)
+
+
 def verify(layout, launcher):
     """Prove imports work and a real Pygame Zero game runs. Raises on failure."""
     code, out = run([layout.venv_python, "-c",
@@ -1082,7 +1114,8 @@ def verify(layout, launcher):
                      "print(pygame.version.ver, pgzero.__version__)"],
                     timeout=120)
     if code != 0:
-        raise InstallError("Pygame or Pygame Zero cannot be imported.", EXIT_VERIFY,
+        raise InstallError(missing_library_help(out) or
+                           "Pygame or Pygame Zero cannot be imported.", EXIT_VERIFY,
                            details=tail(out))
     if not os.path.isfile(layout.venv_pgzrun):
         raise InstallError("The pgzrun program is missing from %s." % layout.venv_pgzrun,
@@ -1096,7 +1129,8 @@ def verify(layout, launcher):
                          "PYGAME_HIDE_SUPPORT_PROMPT": "1"})
         code, out = run([launcher, game], timeout=120, env=env)
         if code != 0 or SMOKE_TOKEN not in out:
-            raise InstallError("A test game could not be run with pgzrun.", EXIT_VERIFY,
+            raise InstallError(missing_library_help(out) or
+                               "A test game could not be run with pgzrun.", EXIT_VERIFY,
                                details=tail(out))
     finally:
         shutil.rmtree(workdir, ignore_errors=True)

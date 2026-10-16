@@ -21,7 +21,7 @@ param(
 # The values below are written by tools/release.py. Do not edit by hand.
 $PgzRepo = "KylerChan/pygamezero-installer"
 $PgzVersion = "v1.0.0"
-$PgzInstallPySha256 = "d15b2c0ce6fd5a2faf068b65bd7b78dc3c36c8b18962ed0915c37b7c08237911"
+$PgzInstallPySha256 = "c2ac724fa82e1cab3f687f3477947aac18ad8be2dcc15dc1d3ae3c013b186337"
 
 function Test-PythonCandidate([string]$Exe, [string[]]$PreArgs) {
     # Returns the real interpreter path, or $null. The Microsoft Store

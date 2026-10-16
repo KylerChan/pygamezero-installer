@@ -72,7 +72,7 @@ jobs:
           bash install.sh
           # install.py falls back to zsh on macOS and bash on Linux if SHELL is unset.
           sh_bin=${SHELL:-$([ "$(uname)" = Darwin ] && echo /bin/zsh || echo /bin/bash)}
-          rc=$(case "$sh_bin" in */zsh) echo ~/.zshrc ;; *) echo ~/.bashrc ;; esac)
+          if [ "$(basename "$sh_bin")" = zsh ]; then rc=~/.zshrc; else rc=~/.bashrc; fi
           test "$(grep -c '>>> pygamezero-installer >>>' "$rc")" = 1
 
       - name: A new shell finds pgzrun and runs a game
@@ -154,16 +154,23 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Bare images lack GLib, which every desktop Linux has; add it to
+          # mimic a student's machine.
           - name: Ubuntu 24.04 system Python 3.12
             image: ubuntu:24.04
-            setup: apt-get update && apt-get install -y python3 python3-venv
+            setup: apt-get update && apt-get install -y python3 python3-venv libglib2.0-0
             expect_code: 0
             expect_text: Installation complete
           - name: Debian 12 system Python 3.11
             image: debian:12
-            setup: apt-get update && apt-get install -y python3 python3-venv
+            setup: apt-get update && apt-get install -y python3 python3-venv libglib2.0-0
             expect_code: 0
             expect_text: Installation complete
+          - name: Debian 12 missing a system library
+            image: debian:12
+            setup: apt-get update && apt-get install -y python3 python3-venv
+            expect_code: 8
+            expect_text: sudo apt install libglib2.0-0
           - name: Ubuntu 24.04 without venv support
             image: ubuntu:24.04
             setup: apt-get update && apt-get install -y python3
