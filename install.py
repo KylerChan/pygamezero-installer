@@ -33,7 +33,7 @@ import tempfile
 import time
 import traceback
 
-INSTALLER_VERSION = "1.1.0"
+INSTALLER_VERSION = "1.2.0"
 
 # Pinned, tested package versions. pygame 2.6.1 publishes binary wheels for
 # CPython 3.6-3.13 only; on 3.14+ pip falls back to compiling pygame from
@@ -47,7 +47,7 @@ RECOMMENDED = (3, 13)
 MARKER_FILE = "pygamezero-installer.json"
 LOG_FILE = "install.log"
 LOG_MAX_BYTES = 1024 * 1024
-ISSUES_URL = "https://github.com/KylerChan/pygamezero-installer/issues"
+HELP_URL = "https://kylerchan.github.io/pygamezero-installer/#help"
 SHIM_MARKER = "managed-by: pygamezero-installer"
 RC_BEGIN = "# >>> pygamezero-installer >>>"
 RC_END = "# <<< pygamezero-installer <<<"
@@ -2026,7 +2026,7 @@ def main(argv=None):
         console.write("    %s: %s" % (type(exc).__name__, exc))
         console.write("You can safely run the installer again.")
         print_log_path(console)
-        console.write("Please also report it at %s" % ISSUES_URL)
+        console.write("Help and troubleshooting: %s" % HELP_URL)
         return EXIT_ERROR
 
 

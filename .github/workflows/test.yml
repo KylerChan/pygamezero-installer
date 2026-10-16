@@ -10,6 +10,8 @@ permissions:
 
 env:
   PYTHONUNBUFFERED: "1"
+  RELEASE_BASE: https://kylerchan.github.io/pygamezero-installer/releases/v1.0.0
+  RELEASE_SHA256: c2ac724fa82e1cab3f687f3477947aac18ad8be2dcc15dc1d3ae3c013b186337
   SDL_VIDEODRIVER: dummy
   SDL_AUDIODRIVER: dummy
 
@@ -101,18 +103,21 @@ jobs:
           echo "$out"
           echo "$out" | grep -q GAME_RAN
 
-      - name: Remote mode (curl | bash) with hash verification
-        env:
-          BASE: https://raw.githubusercontent.com/${{ github.event.pull_request.head.repo.full_name || github.repository }}/${{ github.event.pull_request.head.sha || github.sha }}
+      # The repository is private, so remote mode is exercised against a
+      # release already published on the website (v1.0.0, whose install.py
+      # fingerprint is fixed). The newest release is tested by pages.yml
+      # right after it deploys.
+      - name: Remote mode downloads and verifies a published release
         run: |
-          curl -fsSL "$BASE/install.sh" | PGZ_INSTALLER_BASE_URL="$BASE" bash
+          out=$(cat install.sh | PGZ_INSTALLER_BASE_URL="$RELEASE_BASE" \
+                PGZ_EXPECTED_SHA256="$RELEASE_SHA256" bash -s -- --version 2>&1)
+          echo "$out"
+          echo "$out" | grep -qx "1.0.0" || exit 1
 
       - name: Remote mode refuses a tampered installer
-        env:
-          BASE: https://raw.githubusercontent.com/${{ github.event.pull_request.head.repo.full_name || github.repository }}/${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set +e
-          out=$(curl -fsSL "$BASE/install.sh" | PGZ_INSTALLER_BASE_URL="$BASE" \
+          out=$(cat install.sh | PGZ_INSTALLER_BASE_URL="$RELEASE_BASE" \
                 PGZ_EXPECTED_SHA256=0000000000000000000000000000000000000000000000000000000000000000 bash 2>&1)
           code=$?
           echo "$out"
@@ -121,11 +126,9 @@ jobs:
 
       - name: Piping to sh explains that bash is needed
         if: runner.os == 'Linux'   # macOS /bin/sh is bash, so it would just install
-        env:
-          BASE: https://raw.githubusercontent.com/${{ github.event.pull_request.head.repo.full_name || github.repository }}/${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           set +e
-          out=$(curl -fsSL "$BASE/install.sh" | sh 2>&1)
+          out=$(cat install.sh | sh 2>&1)
           code=$?
           echo "$out"
           [ "$code" = 1 ] || { echo "expected exit 1, got $code"; exit 1; }
@@ -260,19 +263,18 @@ jobs:
           Write-Host $out
           if ($out -notmatch "GAME_RAN") { exit 1 }
 
-      - name: Remote mode (irm | iex) with hash verification
-        env:
-          PGZ_INSTALLER_BASE_URL: https://raw.githubusercontent.com/${{ github.event.pull_request.head.repo.full_name || github.repository }}/${{ github.event.pull_request.head.sha || github.sha }}
+      - name: Remote mode (iex) downloads and verifies a published release
         run: |
-          irm "$env:PGZ_INSTALLER_BASE_URL/install.ps1" | iex
+          $env:PGZ_INSTALLER_BASE_URL = $env:RELEASE_BASE
+          $env:PGZ_EXPECTED_SHA256 = $env:RELEASE_SHA256
+          Get-Content -Raw .\install.ps1 | iex
           if ($LASTEXITCODE -ne 0) { exit 1 }
 
       - name: Remote mode refuses a tampered installer
-        env:
-          PGZ_INSTALLER_BASE_URL: https://raw.githubusercontent.com/${{ github.event.pull_request.head.repo.full_name || github.repository }}/${{ github.event.pull_request.head.sha || github.sha }}
-          PGZ_EXPECTED_SHA256: "0000000000000000000000000000000000000000000000000000000000000000"
         run: |
-          irm "$env:PGZ_INSTALLER_BASE_URL/install.ps1" | iex
+          $env:PGZ_INSTALLER_BASE_URL = $env:RELEASE_BASE
+          $env:PGZ_EXPECTED_SHA256 = "0000000000000000000000000000000000000000000000000000000000000000"
+          Get-Content -Raw .\install.ps1 | iex
           if ($LASTEXITCODE -ne 1) { exit 1 }
           exit 0
 

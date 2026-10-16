@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-"""Write the GitHub repo, release tag and install.py SHA-256 into the bootstrappers.
+"""Write the website URL, release tag and install.py SHA-256 into the bootstrappers.
 
-    python tools/release.py --repo yourname/pygamezero-installer --version v1.0.0
-    python tools/release.py            # refresh the hash only (keeps repo/version)
+    python tools/release.py --version v1.2.0
+    python tools/release.py --site https://you.github.io/pygamezero-installer --version v1.2.0
+    python tools/release.py            # refresh the hash only (keeps site/version)
     python tools/release.py --check    # exit 1 if the stamped hash is stale
 
 install.sh and install.ps1 download install.py from
-https://raw.githubusercontent.com/<repo>/<version>/install.py and refuse to run
-it unless its hash matches, so run this, commit, then create the tag.
+<site>/releases/<version>/install.py (published by .github/workflows/pages.yml
+from the git tag) and refuse to run it unless its hash matches, so run this,
+commit, then create the tag.
 """
 
 import argparse
@@ -18,21 +20,21 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# (file, repo pattern, version pattern, hash pattern); each has one group to replace.
+# (file, site pattern, version pattern, hash pattern); each has one group to replace.
 FIELDS = {
-    "install.sh": (r'^PGZ_REPO="([^"]*)"', r'^PGZ_VERSION="([^"]*)"',
+    "install.sh": (r'^PGZ_SITE="([^"]*)"', r'^PGZ_VERSION="([^"]*)"',
                    r'^PGZ_INSTALL_PY_SHA256="([^"]*)"'),
-    "install.ps1": (r'^\$PgzRepo = "([^"]*)"', r'^\$PgzVersion = "([^"]*)"',
+    "install.ps1": (r'^\$PgzSite = "([^"]*)"', r'^\$PgzVersion = "([^"]*)"',
                     r'^\$PgzInstallPySha256 = "([^"]*)"'),
 }
 
 
-RAW_URL = re.compile(r"https://raw\.githubusercontent\.com/[^/\s]+/[^/\s]+/[^/\s]+/(install\.(?:sh|ps1|py))")
+# Links pinned to a release: <site>/releases/<tag>/<file>
+RELEASE_URL = re.compile(r"(https://[^\s/]+(?:/[^\s/]+)*?)/releases/[^/\s]+/(install\.(?:sh|ps1|py))")
 
 
-def update_urls(text, repo, version):
-    return RAW_URL.sub(lambda m: "https://raw.githubusercontent.com/%s/%s/%s" % (
-        repo, version, m.group(1)), text)
+def update_urls(text, site, version):
+    return RELEASE_URL.sub(lambda m: "%s/releases/%s/%s" % (site, version, m.group(2)), text)
 
 
 def install_py_sha256(root=ROOT):
@@ -66,7 +68,7 @@ def stamped_values(root=ROOT):
 
 def main(argv=None):
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    p.add_argument("--repo", help="GitHub owner/name, e.g. myschool/pygamezero-installer")
+    p.add_argument("--site", help="website URL, e.g. https://you.github.io/pygamezero-installer")
     p.add_argument("--version", help="release tag, e.g. v1.0.0")
     p.add_argument("--check", action="store_true", help="only verify the stamped hash")
     args = p.parse_args(argv)
@@ -80,22 +82,22 @@ def main(argv=None):
         print("Bootstrapper hashes match install.py (%s)" % digest)
         return 0
 
-    if args.repo and not re.match(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$", args.repo):
-        raise SystemExit("--repo must look like owner/name")
+    if args.site and not re.match(r"^https://[A-Za-z0-9.-]+(/[A-Za-z0-9_.~-]+)*$", args.site):
+        raise SystemExit("--site must be an https:// URL without a trailing slash")
     if args.version and not re.match(r"^[A-Za-z0-9_.-]+$", args.version):
         raise SystemExit("--version must be a plain tag name like v1.0.0")
 
-    for name, (repo_pat, ver_pat, hash_pat) in FIELDS.items():
+    for name, (site_pat, ver_pat, hash_pat) in FIELDS.items():
         path = os.path.join(ROOT, name)
         with open(path, encoding="utf-8", newline="") as fh:
             text = fh.read()
-        if args.repo:
-            text = replace_field(text, repo_pat, args.repo)
+        if args.site:
+            text = replace_field(text, site_pat, args.site)
         if args.version:
             text = replace_field(text, ver_pat, args.version)
         text = replace_field(text, hash_pat, digest)
-        repo, version = read_field(text, repo_pat), read_field(text, ver_pat)
-        text = update_urls(text, repo, version)
+        site, version = read_field(text, site_pat), read_field(text, ver_pat)
+        text = update_urls(text, site, version)
         with open(path, "w", encoding="utf-8", newline="") as fh:
             fh.write(text)
         print("updated %s" % name)
@@ -104,7 +106,7 @@ def main(argv=None):
         with open(readme, encoding="utf-8", newline="") as fh:
             text = fh.read()
         with open(readme, "w", encoding="utf-8", newline="") as fh:
-            fh.write(update_urls(text, repo, version))
+            fh.write(update_urls(text, site, version))
         print("updated README.md")
     print("install.py sha256: %s" % digest)
     return 0

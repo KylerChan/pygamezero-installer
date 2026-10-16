@@ -1,6 +1,6 @@
 # Pygame Zero Installer: Windows PowerShell bootstrapper.
 #
-#   irm https://raw.githubusercontent.com/KylerChan/pygamezero-installer/v1.1.0/install.ps1 | iex
+#   irm https://kylerchan.github.io/pygamezero-installer/install.ps1 | iex
 #
 # This script only finds a Python 3 to run install.py with. It downloads
 # install.py from a fixed release, checks its SHA-256 hash, and runs it.
@@ -30,9 +30,9 @@ param(
 )
 
 # The values below are written by tools/release.py. Do not edit by hand.
-$PgzRepo = "KylerChan/pygamezero-installer"
-$PgzVersion = "v1.1.0"
-$PgzInstallPySha256 = "a67792a8abaf4948e13c6742b8689546e647817b71d77c47ecf2ba117f9ad4b6"
+$PgzSite = "https://kylerchan.github.io/pygamezero-installer"
+$PgzVersion = "v1.2.0"
+$PgzInstallPySha256 = "60c494459b0925437f5774e742807af66d3cc753907f282b4a3a20834fb259af"
 
 # ---------------------------------------------------------------------------
 # Preflight (PowerShell 2.0 and Constrained Language Mode safe)
@@ -43,11 +43,11 @@ function Write-PgzManualInstall {
     Write-Host "You can also install without this script:"
     Write-Host "  1. Install Python 3.13 (64-bit) from https://www.python.org/downloads/windows/"
     Write-Host "  2. Download the installer file (right-click > Save link as...):"
-    Write-Host "         https://raw.githubusercontent.com/$PgzRepo/$PgzVersion/install.py"
+    Write-Host "         $PgzSite/releases/$PgzVersion/install.py"
     Write-Host "  3. Open Command Prompt in the folder where you saved it and run:"
     Write-Host "         py install.py"
     Write-Host ""
-    Write-Host "More help: https://github.com/$PgzRepo"
+    Write-Host "More help: $PgzSite/#help"
 }
 
 $script:PgzExitCode = 1
@@ -449,7 +449,7 @@ function Write-PgzDownloadHelp($Problem, [string]$Url) {
         "dns" {
             Write-Host "Your computer could not find $hostName. This usually means there is no"
             Write-Host "internet connection right now, or the network blocks this website."
-            Write-Host "Check that you are connected (try opening https://github.com in a browser),"
+            Write-Host "Check that you are connected (try opening https://kylerchan.github.io in a browser),"
             Write-Host "then run the installer again."
         }
         "offline" {
@@ -480,7 +480,7 @@ function Write-PgzDownloadHelp($Problem, [string]$Url) {
         "notfound" {
             Write-Host "The installer file was not found there (HTTP $($Problem.Status)). The link may be"
             Write-Host "mistyped, or this version may have been removed. Copy the install command"
-            Write-Host "again from https://github.com/$PgzRepo"
+            Write-Host "again from $PgzSite"
         }
         "blocked" {
             Write-Host "The server refused the download (HTTP $($Problem.Status)). A school web filter may"
@@ -606,7 +606,7 @@ function Invoke-PgzInstaller {
             Write-Host "Using local installer: $installer"
         } else {
             $base = $env:PGZ_INSTALLER_BASE_URL
-            if (-not $base) { $base = "https://raw.githubusercontent.com/$PgzRepo/$PgzVersion" }
+            if (-not $base) { $base = "$PgzSite/releases/$PgzVersion" }
             $base = $base.TrimEnd("/")
             if (-not $base.StartsWith("https://")) {
                 Write-Host "Refusing to download over an insecure connection: $base"
@@ -729,7 +729,7 @@ function Write-PgzUnexpectedError($ErrorRecord) {
     if ($line) { Write-Host "    (install.ps1 line $line)" }
     Write-Host ""
     Write-Host "Please run the installer again. If it keeps happening, show this message to your"
-    Write-Host "teacher or report it at https://github.com/$PgzRepo/issues"
+    Write-Host "teacher. Help: $PgzSite/#help"
 }
 
 if ($PgzPreflightOk) {

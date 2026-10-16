@@ -35,12 +35,12 @@ curl -fsSL https://kylerchan.github.io/pygamezero-installer/install.sh | bash
 irm https://kylerchan.github.io/pygamezero-installer/install.ps1 | iex
 ```
 
-The website always serves the latest release. To pin this exact version instead, use `https://raw.githubusercontent.com/KylerChan/pygamezero-installer/v1.1.0/install.sh` (or `install.ps1`).
+The website always serves the latest release. To pin this exact version instead, use `https://kylerchan.github.io/pygamezero-installer/releases/v1.2.0/install.sh` (or `install.ps1`).
 
 You should see something like this:
 
 ```text
-Pygame Zero Installer (v1.1.0)
+Pygame Zero Installer (v1.2.0)
 
 [1/7] Detecting operating system... Windows 11, x86_64
 [2/7] Checking Python... Python 3.13.5 (C:\Users\you\AppData\Local\Programs\Python\Python313\python.exe)
@@ -131,8 +131,8 @@ Piping a script from the internet straight into a shell runs it before you can r
 **macOS / Linux**
 
 ```bash
-curl -fsSLO https://raw.githubusercontent.com/KylerChan/pygamezero-installer/v1.1.0/install.sh
-curl -fsSLO https://raw.githubusercontent.com/KylerChan/pygamezero-installer/v1.1.0/install.py
+curl -fsSLO https://kylerchan.github.io/pygamezero-installer/releases/v1.2.0/install.sh
+curl -fsSLO https://kylerchan.github.io/pygamezero-installer/releases/v1.2.0/install.py
 less install.sh install.py       # read them
 bash install.sh                  # uses the install.py next to it
 ```
@@ -140,8 +140,8 @@ bash install.sh                  # uses the install.py next to it
 **Windows**
 
 ```powershell
-irm https://raw.githubusercontent.com/KylerChan/pygamezero-installer/v1.1.0/install.ps1 -OutFile install.ps1
-irm https://raw.githubusercontent.com/KylerChan/pygamezero-installer/v1.1.0/install.py -OutFile install.py
+irm https://kylerchan.github.io/pygamezero-installer/releases/v1.2.0/install.ps1 -OutFile install.ps1
+irm https://kylerchan.github.io/pygamezero-installer/releases/v1.2.0/install.py -OutFile install.py
 notepad install.ps1              # read them
 powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
@@ -178,7 +178,7 @@ Add these after `install.py`, or after `bash -s --` when using curl (for example
 | `--python PATH` | | Use a specific Python |
 | `--allow-root` | | Allow installing as root (containers only; students never need this) |
 
-To pass options with `irm` on Windows, use: `& ([scriptblock]::Create((irm https://raw.githubusercontent.com/KylerChan/pygamezero-installer/v1.1.0/install.ps1))) -Uninstall`
+To pass options with `irm` on Windows, use: `& ([scriptblock]::Create((irm https://kylerchan.github.io/pygamezero-installer/install.ps1))) -Uninstall`
 
 Environment variables `PGZERO_HOME` (where the environment goes) and `PGZERO_BIN_DIR` (where `pgzrun` goes) change the default folders.
 
@@ -196,7 +196,7 @@ Environment variables `PGZERO_HOME` (where the environment goes) and `PGZERO_BIN
 | macOS: a pop-up asks to install "command line developer tools" | That's macOS offering its own Python. You can cancel it and install Python 3.13 from python.org instead. |
 | "This installer needs bash" | You typed `\| sh` at the end. Use `\| bash` instead. |
 | "A web page was downloaded instead of the installer" / "the download was empty" | Your Wi-Fi wants you to log in. Open any web page in your browser, sign in, then run the command again. |
-| Certificate / HTTPS errors on a school network | The network inspects secure traffic. Check your computer's clock, try a phone hotspot, or ask IT to allow `raw.githubusercontent.com`, `pypi.org` and `files.pythonhosted.org`. |
+| Certificate / HTTPS errors on a school network | The network inspects secure traffic. Check your computer's clock, try a phone hotspot, or ask IT to allow `kylerchan.github.io`, `pypi.org` and `files.pythonhosted.org`. |
 | "PowerShell is running in ConstrainedLanguage mode" (Windows) | Your school limits scripts on this PC. Ask IT, or install Python 3.13 from python.org, download `install.py` and run `py install.py`. |
 | "Running as root" / you used `sudo` | Never use `sudo`: the installer is for your own account. If you used it before, run `sudo chown -R "$(whoami)" ~/.local/share/pygamezero ~/.local/bin/pgzrun` and run the installer again normally. (Installing as root on purpose, e.g. in a container: add `--allow-root`.) |
 | The install was interrupted (Ctrl+C, closed window, lost Wi-Fi) | Just run it again. It notices the half-finished install and repairs it automatically. |
@@ -205,7 +205,7 @@ Environment variables `PGZERO_HOME` (where the environment goes) and `PGZERO_BIN
 | "Path too long" (Windows) | In PowerShell run `$env:PGZERO_HOME = "C:\pgzero"`, then run the install command again in the same window. |
 | The game window doesn't open on Linux | You need a desktop session; it won't open over plain SSH. |
 
-**Getting help.** When something fails, the installer prints the path of a log file: `install.log` in the Pygame Zero folder, or a `pygamezero-install-….log` in your temp folder if that folder couldn't be created. Send that file to your teacher or attach it to a [GitHub issue](https://github.com/KylerChan/pygamezero-installer/issues). It contains the steps and error messages, not passwords (proxy and pip settings are recorded by name only).
+**Getting help.** When something fails, the installer prints the path of a log file: `install.log` in the Pygame Zero folder, or a `pygamezero-install-….log` in your temp folder if that folder couldn't be created. Send that file to your teacher. It contains the steps and error messages, not passwords (proxy and pip settings are recorded by name only).
 
 **Exit codes** (useful for teachers and scripts): `0` success, `1` unexpected error, `2` unsupported system (or PowerShell too old), `3` no compatible Python, `4` environment problem (including a full disk), `5` package install failed, `6` network problem, `7` permission problem (including running as root, or scripts blocked by school policy), `8` verification failed, `130` cancelled with Ctrl+C.
 
@@ -214,13 +214,13 @@ Environment variables `PGZERO_HOME` (where the environment goes) and `PGZERO_BIN
 macOS / Linux:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/KylerChan/pygamezero-installer/v1.1.0/install.sh | bash -s -- --uninstall
+curl -fsSL https://kylerchan.github.io/pygamezero-installer/install.sh | bash -s -- --uninstall
 ```
 
 Windows:
 
 ```powershell
-& ([scriptblock]::Create((irm https://raw.githubusercontent.com/KylerChan/pygamezero-installer/v1.1.0/install.ps1))) -Uninstall
+& ([scriptblock]::Create((irm https://kylerchan.github.io/pygamezero-installer/install.ps1))) -Uninstall
 ```
 
 This removes the environment, the `pgzrun` command and the PATH changes it made. It does not touch your games, your other Python installations, or a `pgzrun` it didn't create. If you installed Python itself through the installer's offer, remove it the normal way (Windows *Settings → Apps*, or `brew uninstall python@3.13`).
@@ -229,7 +229,7 @@ This removes the environment, the `pgzrun` command and the PATH changes it made.
 
 This installer runs code downloaded from the internet, so here's exactly what it does and doesn't do:
 
-- **Pinned and verified.** The website only publishes scripts from release tags (currently `v1.1.0`), never from a moving branch, and each script names the exact release it downloads. `install.sh` and `install.ps1` download `install.py` over HTTPS only (plain `http://` is refused) and check its **SHA-256 fingerprint** against the value written into the bootstrapper. If they don't match, nothing is run.
+- **Pinned and verified.** The website only publishes scripts from release tags (currently `v1.2.0`), never from a moving branch, and each script names the exact release it downloads. `install.sh` and `install.ps1` download `install.py` over HTTPS only (plain `http://` is refused) and check its **SHA-256 fingerprint** against the value written into the bootstrapper. If they don't match, nothing is run.
 - **The remaining risk:** with `curl | bash` or `irm | iex` you trust whoever controls the GitHub repository and the HTTPS connection at the moment you run it. If you'd rather not, use [Install without `curl | bash`](#install-without-curl--bash-inspect-first) and read the scripts first. They're plain text and short.
 - **No administrator rights.** Everything goes into your own user folders. The installer never runs `sudo` and never asks for a password or any credentials. On Linux it only *prints* the `sudo apt ...` style commands you might need.
 - **Asks before installing anything system-wide.** Python is only installed through winget (`--scope user`, the official python.org package) or Homebrew, and only after you type `y`.
@@ -256,21 +256,21 @@ All the decisions (which Python, venv, pip, PATH, verification) live in `install
 
 ### Publishing a release
 
-1. Push this folder to a GitHub repository (public, so `raw.githubusercontent.com` can serve it).
-2. Write your repository and tag into the scripts and this README:
+The repository can be private: students only ever download from the website.
 
-   ```bash
-   python3 tools/release.py --repo YOUR-USER/pygamezero-installer --version v1.0.0
-   ```
+1. Make your changes and run `python3 tools/release.py --version vX.Y.Z` (this refreshes the `install.py` fingerprint and the version in the scripts and README). Keep `INSTALLER_VERSION` in `install.py` equal to the tag without the `v` (a test checks this).
+2. Commit, push, and wait for CI to go green.
+3. Create the tag: `git tag -a vX.Y.Z -m "..." && git push origin vX.Y.Z`.
 
-   Keep `INSTALLER_VERSION` in `install.py` equal to the tag without the `v` (a test checks this).
-3. Commit, push, and wait for CI to go green.
-4. Create the tag: `git tag v1.0.0 && git push origin v1.0.0`.
-5. Share the commands from the **Install** section.
+Never move an existing tag. If you fork this project, also pass `--site https://YOU.github.io/pygamezero-installer`.
 
-Whenever `install.py` changes, run `python3 tools/release.py` again (it refreshes the hash; CI fails if you forget) and release under a **new** tag. Never move an existing tag.
+**Website.** `.github/workflows/pages.yml` publishes to GitHub Pages on every `v*` tag (and can be run by hand):
 
-**Website.** `.github/workflows/pages.yml` publishes `website/index.html`, `install.sh` and `install.ps1` to GitHub Pages whenever a `v*` tag is pushed, then runs the public `curl | bash` and `irm | iex` commands against the live site on Linux, macOS and Windows. The served scripts still download `install.py` from their pinned tag and verify its hash.
+- `index.html` comes from `website/`.
+- `install.sh` and `install.ps1` come from the **newest tag**.
+- `releases/<tag>/install.{sh,ps1,py}` is published for **every** tag.
+
+The scripts download `install.py` from their own `releases/<tag>/` folder and verify its hash, so a release is all-or-nothing and old links keep working. After deploying, the workflow runs the public `curl | bash` and `irm | iex` commands against the live site on Linux, macOS and Windows. GitHub Pages for a private repository needs a paid plan (Pro, Team or Education).
 
 ### Running the tests
 
@@ -286,5 +286,5 @@ CI (`.github/workflows/test.yml`) additionally runs, for real:
 
 - the unit tests on Windows, macOS and Ubuntu with Python 3.9, 3.13 and 3.14;
 - a full install, repeat install, game launch from a folder with spaces and Unicode, and uninstall on Ubuntu (x64 and ARM), macOS (Apple Silicon and Intel) and Windows;
-- `install.sh` and `install.ps1` (PowerShell 7 and Windows PowerShell 5.1) end to end, including a new-terminal `pgzrun game.py` check, `curl | bash` and `irm | iex` against the commit being tested, rejection of a tampered download, an unreachable package index (exit 6) and a read-only install folder (exit 7);
+- `install.sh` and `install.ps1` (PowerShell 7 and Windows PowerShell 5.1) end to end, including a new-terminal `pgzrun game.py` check, downloading and verifying a published release from the website, rejection of a tampered download, an unreachable package index (exit 6) and a read-only install folder (exit 7);
 - Linux containers: Ubuntu 24.04 and Debian 12 system Python (succeeds), Ubuntu without `python3-venv` (exit 3 with the right `apt` command), a Python-3.14-only image (exit 3, "too new") and an image with no Python (exit 3).

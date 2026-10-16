@@ -1,8 +1,12 @@
 name: website
 
-# The site serves install.sh / install.ps1, which pin a release tag and the
-# SHA-256 of install.py. Deploy only from tags so the site never points at a
-# release that doesn't exist yet.
+# Site layout:
+#   index.html                      from website/ (current commit)
+#   install.sh, install.ps1,        from the newest v* tag
+#   install.py
+#   releases/<tag>/install.{sh,ps1,py}   for every v* tag
+# The scripts download install.py from their own releases/<tag>/ folder and
+# check its pinned SHA-256, so the repository itself can stay private.
 on:
   push:
     tags: ["v*"]
@@ -26,13 +30,34 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v5
-      - name: Refuse stale bootstrapper hashes
-        run: python3 tools/release.py --check
+        with:
+          fetch-depth: 0   # all tags
       - name: Assemble site
         run: |
-          mkdir _site
-          cp website/index.html install.sh install.ps1 _site/
+          set -euo pipefail
+          latest=$(git tag -l 'v*' --sort=-v:refname | head -n 1)
+          [ -n "$latest" ] || { echo "no v* tags"; exit 1; }
+          echo "newest release: $latest"
+          mkdir -p _site
+          cp website/index.html _site/
           touch _site/.nojekyll
+          for tag in $(git tag -l 'v*'); do
+            mkdir -p "_site/releases/$tag"
+            for f in install.sh install.ps1 install.py; do
+              git show "$tag:$f" > "_site/releases/$tag/$f"
+            done
+          done
+          cp "_site/releases/$latest/install.sh" "_site/releases/$latest/install.ps1" \
+             "_site/releases/$latest/install.py" _site/
+          echo "LATEST=$latest" >> "$GITHUB_ENV"
+      - name: Newest release is self-consistent
+        run: |
+          set -euo pipefail
+          want=$(sha256sum "_site/install.py" | cut -d' ' -f1)
+          grep -q "^PGZ_VERSION=\"$LATEST\"$" _site/install.sh
+          grep -q "^PGZ_INSTALL_PY_SHA256=\"$want\"$" _site/install.sh
+          grep -q "^\$PgzVersion = \"$LATEST\"$" _site/install.ps1
+          grep -q "^\$PgzInstallPySha256 = \"$want\"$" _site/install.ps1
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

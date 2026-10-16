@@ -36,12 +36,12 @@ def find_pwsh():
 
 
 PWSH = find_pwsh()
-RELEASE_BASE = "https://raw.githubusercontent.com/KylerChan/pygamezero-installer/v1.0.0"
+RELEASE_BASE = "https://kylerchan.github.io/pygamezero-installer/releases/v1.0.0"
 # The fingerprint of install.py *as released in v1.0.0*. The script's own pin
 # tracks the working copy of install.py, which differs between releases.
 RELEASE_INSTALL_PY_SHA256 = "c2ac724fa82e1cab3f687f3477947aac18ad8be2dcc15dc1d3ae3c013b186337"
-MISSING_BASE = "https://raw.githubusercontent.com/KylerChan/pygamezero-installer/no-such-tag"
-HTML_BASE = "https://github.com/KylerChan/pygamezero-installer/blob/v1.0.0"
+MISSING_BASE = "https://kylerchan.github.io/pygamezero-installer/releases/no-such-tag"
+HTML_BASE = "https://kylerchan.github.io/pygamezero-installer/index.html?path="  # + "/install.py" -> the HTML home page
 
 
 def ps_quote(text):
@@ -185,7 +185,7 @@ class StaticTests(Ps1TestCase):
     def test_release_lines_keep_their_format(self):
         with open(SCRIPT) as f:
             text = f.read()
-        self.assertRegex(text, r'(?m)^\$PgzRepo = "[^"]+"$')
+        self.assertRegex(text, r'(?m)^\$PgzSite = "[^"]+"$')
         self.assertRegex(text, r'(?m)^\$PgzVersion = "[^"]+"$')
         self.assertRegex(text, r'(?m)^\$PgzInstallPySha256 = "[0-9a-f]{64}"$')
 
@@ -438,7 +438,7 @@ class FunctionTests(Ps1TestCase):
 
     LOADER = r"""
 $ErrorActionPreference = 'Stop'
-$PgzRepo = 'KylerChan/pygamezero-installer'
+$PgzSite = 'https://kylerchan.github.io/pygamezero-installer'
 $tokens = $null; $errors = $null
 $ast = [System.Management.Automation.Language.Parser]::ParseFile(%s, [ref]$tokens, [ref]$errors)
 foreach ($f in $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $false)) {

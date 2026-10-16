@@ -28,9 +28,9 @@ if [ -z "${BASH_VERSION:-}" ]; then
 fi
 
 # The values below are written by tools/release.py. Do not edit by hand.
-PGZ_REPO="KylerChan/pygamezero-installer"
-PGZ_VERSION="v1.1.0"
-PGZ_INSTALL_PY_SHA256="a67792a8abaf4948e13c6742b8689546e647817b71d77c47ecf2ba117f9ad4b6"
+PGZ_SITE="https://kylerchan.github.io/pygamezero-installer"
+PGZ_VERSION="v1.2.0"
+PGZ_INSTALL_PY_SHA256="60c494459b0925437f5774e742807af66d3cc753907f282b4a3a20834fb259af"
 
 # Everything is inside main(), so a partially downloaded script does nothing.
 # Must run on macOS's bash 3.2: no bash 4 features.
@@ -163,7 +163,7 @@ Free up some disk space and try again." 1
             Darwin)
                 say "macOS normally includes curl, so something unusual is going on."
                 say "You can download install.sh and install.py from"
-                say "    https://github.com/$PGZ_REPO/releases"
+                say "    $PGZ_SITE/releases/$PGZ_VERSION/"
                 say "put them in the same folder, and run:  bash install.sh"
                 ;;
             Linux)
@@ -316,7 +316,7 @@ Your disk may be full. Free up some space and try again.
         [ -r "$installer" ] || die "Cannot read $installer (permission denied)." 1
         say "Using local installer: $installer"
     else
-        base="${PGZ_INSTALLER_BASE_URL:-https://raw.githubusercontent.com/$PGZ_REPO/$PGZ_VERSION}"
+        base="${PGZ_INSTALLER_BASE_URL:-$PGZ_SITE/releases/$PGZ_VERSION}"
         base=${base%/}
         case "$base" in
             https://*) ;;

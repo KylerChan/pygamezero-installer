@@ -630,7 +630,7 @@ class CrashAndLogTests(TempDirTestCase):
         self.assertEqual(code, inst.EXIT_ERROR)
         self.assertIn("Something unexpected went wrong", out)
         self.assertIn("RuntimeError: kaboom", out)
-        self.assertIn(inst.ISSUES_URL, out)
+        self.assertIn(inst.HELP_URL, out)
         self.assertNotIn("Traceback", out)
         log = os.path.join(self.tmp, "pg zero", inst.LOG_FILE)
         self.assertIn(log, out)

@@ -173,7 +173,7 @@ footer { padding: 32px 0 48px; color: var(--muted); font-size: 14px; border-top:
 
     <section id="output" aria-labelledby="output-h">
       <h2 id="output-h">What you'll see</h2>
-<pre class="block">Pygame Zero Installer (v1.1.0)
+<pre class="block">Pygame Zero Installer (v1.2.0)
 
 [1/7] Detecting operating system... <span class="ok">macOS 15 (Apple Silicon), arm64</span>
 [2/7] Checking Python... <span class="ok">Python 3.13.5</span>
@@ -251,13 +251,13 @@ pgzrun game.py</pre>
     <section id="security" aria-labelledby="sec-h">
       <h2 id="sec-h">Is this safe?</h2>
       <p>The command downloads a small script and runs it. Before running anything else, the script checks that the main installer file matches a fixed SHA-256 fingerprint from a tagged release. It installs only into your own user folders, never asks for a password, and never changes your other Python installations.</p>
-      <p>Prefer to read the code first? Everything is on <a href="https://github.com/KylerChan/pygamezero-installer">GitHub</a>, including <a href="https://github.com/KylerChan/pygamezero-installer#install-without-curl--bash-inspect-first">how to download and inspect it before running</a>.</p>
+      <p>Prefer to read the code first? Open <a href="install.sh">install.sh</a>, <a href="install.ps1">install.ps1</a> and <a href="install.py">install.py</a> in your browser. To check them before running, download the script and run it from the same folder as <code>install.py</code>: <code>bash install.sh</code> on macOS/Linux, or <code>powershell -ExecutionPolicy Bypass -File .\install.ps1</code> on Windows. You can also skip the scripts and run <code>python3 install.py</code> (Windows: <code>py install.py</code>) directly.</p>
     </section>
   </main>
 
   <footer>
     <button class="theme" type="button" id="theme">Theme</button>
-    Pygame Zero Installer · <a href="https://github.com/KylerChan/pygamezero-installer">Source on GitHub</a> · MIT License<br>
+    Pygame Zero Installer · Source: <a href="install.sh">install.sh</a> · <a href="install.ps1">install.ps1</a> · <a href="install.py">install.py</a> · MIT License<br>
     Not affiliated with the Pygame or Pygame Zero projects.
   </footer>
 </div>
