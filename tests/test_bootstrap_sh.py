@@ -331,7 +331,9 @@ class BootstrapShTests(unittest.TestCase):
         self.assertIn("No working Python 3", out)
         self.assertIn("pyenv: python3: command not found", out)
         self.assertIn("Python 2.7 is too old", out)
-        self.assertIn("permission denied", out)
+        # macOS says "permission denied", Linux "required file not found";
+        # either way the interpreter must be listed as skipped.
+        self.assertIn("python3.13 (", out)
         self.assertIn("Python 3.9 to 3.13", out)
 
     def test_no_python_at_all(self):

@@ -292,12 +292,16 @@ class WingetTests(Ps1TestCase):
         self.assertIn("winget could not install Python (exit code 1, 0x00000001)", proc.output)
         self.assertIn("python.org", proc.output)
 
+    @unittest.skipIf(os.name == "nt", "the script reloads PATH from the real Windows registry, "
+                     "which finds the runner's real Pythons instead of the stub")
     def test_python_installed_by_winget_is_used(self):
         self.winget_stub(0, creates_python=True)
         proc = self.run_file(["-Yes"])
         self.assertEqual(proc.returncode, 0, proc.output)
         self.assertIn("--yes", self.recorded_args())
 
+    @unittest.skipIf(os.name == "nt", "the script reloads PATH from the real Windows registry, "
+                     "which finds the runner's real Pythons instead of the stub")
     def test_python_installed_but_not_visible_yet(self):
         self.winget_stub(0)
         proc = self.run_file(["-Yes"])
@@ -465,14 +469,17 @@ Out-Result dns (Kind ([System.Net.WebException]::new('x', [System.Net.WebExcepti
 Out-Result wtimeout (Kind ([System.Net.WebException]::new('x', [System.Net.WebExceptionStatus]::Timeout)))
 Out-Result trust (Kind ([System.Net.WebException]::new('x', [System.Net.WebExceptionStatus]::TrustFailure)))
 Out-Result proxyname (Kind ([System.Net.WebException]::new('x', [System.Net.WebExceptionStatus]::ProxyNameResolutionFailure)))
-Out-Result auth (Kind ([System.Net.Http.HttpRequestException]::new('The SSL connection could not be established', [System.Security.Authentication.AuthenticationException]::new('remote certificate is invalid'))))
-Out-Result canceled (Kind ([System.Threading.Tasks.TaskCanceledException]::new('The request was canceled due to the configured HttpClient.Timeout of 30 seconds elapsing.')))
-Out-Result refused (Kind ([System.Net.Http.HttpRequestException]::new('Connection refused', [System.Net.Sockets.SocketException]::new([int][System.Net.Sockets.SocketError]::ConnectionRefused))))
-Out-Result s404 (Kind ([System.Net.Http.HttpRequestException]::new('x', $null, [System.Net.HttpStatusCode]::NotFound)))
-Out-Result s407 (Kind ([System.Net.Http.HttpRequestException]::new('x', $null, [System.Net.HttpStatusCode]::ProxyAuthenticationRequired)))
-Out-Result s503 (Kind ([System.Net.Http.HttpRequestException]::new('x', $null, [System.Net.HttpStatusCode]::ServiceUnavailable)))
-Out-Result s403 (Kind ([System.Net.Http.HttpRequestException]::new('x', $null, [System.Net.HttpStatusCode]::Forbidden)))
-Out-Result s400 (Kind ([System.Net.Http.HttpRequestException]::new('x', $null, [System.Net.HttpStatusCode]::BadRequest)))
+# HttpClient exception types only exist by default in PowerShell 7.
+if ($PSVersionTable.PSVersion.Major -ge 6) {
+    Out-Result auth (Kind ([System.Net.Http.HttpRequestException]::new('The SSL connection could not be established', [System.Security.Authentication.AuthenticationException]::new('remote certificate is invalid'))))
+    Out-Result canceled (Kind ([System.Threading.Tasks.TaskCanceledException]::new('The request was canceled due to the configured HttpClient.Timeout of 30 seconds elapsing.')))
+    Out-Result refused (Kind ([System.Net.Http.HttpRequestException]::new('Connection refused', [System.Net.Sockets.SocketException]::new([int][System.Net.Sockets.SocketError]::ConnectionRefused))))
+    Out-Result s404 (Kind ([System.Net.Http.HttpRequestException]::new('x', $null, [System.Net.HttpStatusCode]::NotFound)))
+    Out-Result s407 (Kind ([System.Net.Http.HttpRequestException]::new('x', $null, [System.Net.HttpStatusCode]::ProxyAuthenticationRequired)))
+    Out-Result s503 (Kind ([System.Net.Http.HttpRequestException]::new('x', $null, [System.Net.HttpStatusCode]::ServiceUnavailable)))
+    Out-Result s403 (Kind ([System.Net.Http.HttpRequestException]::new('x', $null, [System.Net.HttpStatusCode]::Forbidden)))
+    Out-Result s400 (Kind ([System.Net.Http.HttpRequestException]::new('x', $null, [System.Net.HttpStatusCode]::BadRequest)))
+}
 # Windows PowerShell 5.1 shape: WebException.Response.StatusCode
 $ps51 = [pscustomobject]@{ Message = 'The remote server returned an error: (407) Proxy Authentication Required.'; InnerException = $null; Response = [pscustomobject]@{ StatusCode = [System.Net.HttpStatusCode]::ProxyAuthenticationRequired } }
 Out-Result ps51_407 (Kind $ps51)
@@ -486,14 +493,15 @@ Out-Result other (Kind ([System.Exception]::new('something odd')))
         self.assertEqual(r["wtimeout"], "timeout||True")
         self.assertEqual(r["trust"], "tls||False")
         self.assertEqual(r["proxyname"], "proxy||False")
-        self.assertEqual(r["auth"], "tls||False")
-        self.assertEqual(r["canceled"], "timeout||True")
-        self.assertEqual(r["refused"], "connect||True")
-        self.assertEqual(r["s404"], "notfound|404|False")
-        self.assertEqual(r["s407"], "proxy|407|False")
-        self.assertEqual(r["s503"], "server|503|True")
-        self.assertEqual(r["s403"], "blocked|403|False")
-        self.assertEqual(r["s400"], "http|400|False")
+        if "auth" in r:  # PowerShell 7 only
+            self.assertEqual(r["auth"], "tls||False")
+            self.assertEqual(r["canceled"], "timeout||True")
+            self.assertEqual(r["refused"], "connect||True")
+            self.assertEqual(r["s404"], "notfound|404|False")
+            self.assertEqual(r["s407"], "proxy|407|False")
+            self.assertEqual(r["s503"], "server|503|True")
+            self.assertEqual(r["s403"], "blocked|403|False")
+            self.assertEqual(r["s400"], "http|400|False")
         self.assertEqual(r["ps51_407"], "proxy|407|False")
         self.assertEqual(r["msg404"], "notfound|404|False")
         self.assertEqual(r["disk"], "disk||False")
