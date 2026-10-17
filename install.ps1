@@ -31,8 +31,8 @@ param(
 
 # The values below are written by tools/release.py. Do not edit by hand.
 $PgzSite = "https://kylerchan.github.io/pygamezero-installer"
-$PgzVersion = "v1.2.0"
-$PgzInstallPySha256 = "60c494459b0925437f5774e742807af66d3cc753907f282b4a3a20834fb259af"
+$PgzVersion = "v1.2.1"
+$PgzInstallPySha256 = "828d082d05b9d0a0ed5b5cbc2ee5f6da7b5d474820ee7a4c8e05b03def8c7878"
 
 # ---------------------------------------------------------------------------
 # Preflight (PowerShell 2.0 and Constrained Language Mode safe)

@@ -33,7 +33,7 @@ import tempfile
 import time
 import traceback
 
-INSTALLER_VERSION = "1.2.0"
+INSTALLER_VERSION = "1.2.1"
 
 # Pinned, tested package versions. pygame 2.6.1 publishes binary wheels for
 # CPython 3.6-3.13 only; on 3.14+ pip falls back to compiling pygame from
@@ -417,6 +417,29 @@ def parse_py_launcher_list(output):
     return paths
 
 
+def _venv_base_python(path):
+    """The interpreter a virtual environment was made from, or `path` itself.
+
+    A venv's python is a symlink to (or copy of) its base interpreter, so the
+    two share a real path. Probing the venv copy first would reject it ("belongs
+    to another virtual environment") and then skip the base as a duplicate,
+    which hides a perfectly good Python whenever a student's venv is active.
+    """
+    cfg = os.path.join(os.path.dirname(os.path.dirname(path)), "pyvenv.cfg")
+    try:
+        with open(cfg, encoding="utf-8", errors="replace") as f:
+            lines = f.read().splitlines()
+    except OSError:
+        return path
+    for line in lines:
+        key, sep, value = line.partition("=")
+        if sep and key.strip().lower() == "home":
+            base = os.path.join(value.strip(), os.path.basename(path))
+            if os.path.isfile(base):
+                return base
+    return path
+
+
 def candidate_commands(os_info, env=None):
     """Interpreter executables worth probing, most likely first."""
     env = os.environ if env is None else env
@@ -461,6 +484,7 @@ def candidate_commands(os_info, env=None):
 
     seen, unique = set(), []
     for c in cands:
+        c = _venv_base_python(c) if c else c
         if not c or not os.path.isfile(c):
             continue
         key = os.path.normcase(os.path.realpath(c))

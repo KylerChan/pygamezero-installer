@@ -35,12 +35,12 @@ curl -fsSL https://kylerchan.github.io/pygamezero-installer/install.sh | bash
 irm https://kylerchan.github.io/pygamezero-installer/install.ps1 | iex
 ```
 
-The website always serves the latest release. To pin this exact version instead, use `https://kylerchan.github.io/pygamezero-installer/releases/v1.2.0/install.sh` (or `install.ps1`).
+The website always serves the latest release. To pin this exact version instead, use `https://kylerchan.github.io/pygamezero-installer/releases/v1.2.1/install.sh` (or `install.ps1`).
 
 You should see something like this:
 
 ```text
-Pygame Zero Installer (v1.2.0)
+Pygame Zero Installer (v1.2.1)
 
 [1/7] Detecting operating system... Windows 11, x86_64
 [2/7] Checking Python... Python 3.13.5 (C:\Users\you\AppData\Local\Programs\Python\Python313\python.exe)
@@ -131,8 +131,8 @@ Piping a script from the internet straight into a shell runs it before you can r
 **macOS / Linux**
 
 ```bash
-curl -fsSLO https://kylerchan.github.io/pygamezero-installer/releases/v1.2.0/install.sh
-curl -fsSLO https://kylerchan.github.io/pygamezero-installer/releases/v1.2.0/install.py
+curl -fsSLO https://kylerchan.github.io/pygamezero-installer/releases/v1.2.1/install.sh
+curl -fsSLO https://kylerchan.github.io/pygamezero-installer/releases/v1.2.1/install.py
 less install.sh install.py       # read them
 bash install.sh                  # uses the install.py next to it
 ```
@@ -140,8 +140,8 @@ bash install.sh                  # uses the install.py next to it
 **Windows**
 
 ```powershell
-irm https://kylerchan.github.io/pygamezero-installer/releases/v1.2.0/install.ps1 -OutFile install.ps1
-irm https://kylerchan.github.io/pygamezero-installer/releases/v1.2.0/install.py -OutFile install.py
+irm https://kylerchan.github.io/pygamezero-installer/releases/v1.2.1/install.ps1 -OutFile install.ps1
+irm https://kylerchan.github.io/pygamezero-installer/releases/v1.2.1/install.py -OutFile install.py
 notepad install.ps1              # read them
 powershell -ExecutionPolicy Bypass -File .\install.ps1
 ```
@@ -229,7 +229,7 @@ This removes the environment, the `pgzrun` command and the PATH changes it made.
 
 This installer runs code downloaded from the internet, so here's exactly what it does and doesn't do:
 
-- **Pinned and verified.** The website only publishes scripts from release tags (currently `v1.2.0`), never from a moving branch, and each script names the exact release it downloads. `install.sh` and `install.ps1` download `install.py` over HTTPS only (plain `http://` is refused) and check its **SHA-256 fingerprint** against the value written into the bootstrapper. If they don't match, nothing is run.
+- **Pinned and verified.** The website only publishes scripts from release tags (currently `v1.2.1`), never from a moving branch, and each script names the exact release it downloads. `install.sh` and `install.ps1` download `install.py` over HTTPS only (plain `http://` is refused) and check its **SHA-256 fingerprint** against the value written into the bootstrapper. If they don't match, nothing is run.
 - **The remaining risk:** with `curl | bash` or `irm | iex` you trust whoever controls the GitHub repository and the HTTPS connection at the moment you run it. If you'd rather not, use [Install without `curl | bash`](#install-without-curl--bash-inspect-first) and read the scripts first. They're plain text and short.
 - **No administrator rights.** Everything goes into your own user folders. The installer never runs `sudo` and never asks for a password or any credentials. On Linux it only *prints* the `sudo apt ...` style commands you might need.
 - **Asks before installing anything system-wide.** Python is only installed through winget (`--scope user`, the official python.org package) or Homebrew, and only after you type `y`.

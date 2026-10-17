@@ -219,6 +219,26 @@ class CandidateCommandTests(unittest.TestCase):
             cands = inst.candidate_commands(MAC)
         self.assertIn("/usr/bin/python3", cands)
 
+    def test_active_venv_python_is_replaced_by_its_base(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            home = os.path.join(tmp, "base", "bin")
+            venv_bin = os.path.join(tmp, "venv", "bin")
+            os.makedirs(home)
+            os.makedirs(venv_bin)
+            base = os.path.join(home, "python3.13")
+            open(base, "w").close()
+            os.symlink(base, os.path.join(venv_bin, "python3.13"))
+            with open(os.path.join(tmp, "venv", "pyvenv.cfg"), "w") as f:
+                f.write("home = %s\ninclude-system-site-packages = false\n" % home)
+            venv_py = os.path.join(venv_bin, "python3.13")
+            with mock.patch.object(inst, "_which_all",
+                                   side_effect=lambda n: [venv_py] if n == "python3.13" else []), \
+                    mock.patch.object(inst, "_mac_has_command_line_tools", return_value=True):
+                cands = inst.candidate_commands(MAC)
+        self.assertIn(base, cands)
+        self.assertNotIn(venv_py, cands)
+
     def test_versioned_names_searched_newest_first(self):
         calls = []
         with mock.patch.object(inst, "_which_all", side_effect=lambda n: calls.append(n) or []):
